@@ -1,5 +1,5 @@
 class Functor f => Applicative' f where
-    pure :: a -> f a
+    pure' :: a -> f a
     (<<*>>) :: f (a -> b) -> f a -> f b
 
 {-
@@ -35,3 +35,32 @@ Proof:
     pure (($ f) . (flip ($))) <*> x
     pure f <*> x
 -}
+
+instance Applicative' Maybe where
+    pure' x = Just x
+    Just f <<*>> Just x = Just $ f x
+    _ <<*>> _ = Nothing
+
+{- 
+Two views on lists.
+  a) Ordered collection of elements
+  b) Context representing multiple results of nondeterministic computation.
+-}
+
+newtype ZipList a = ZipList { getZipList :: [a]} deriving (Show, Eq)
+
+instance Functor ZipList where
+    fmap f (ZipList xs) = ZipList $ fmap f xs
+
+instance Applicative' ZipList where
+    pure' g = ZipList $ repeat g
+
+    ZipList gs <<*>> ZipList xs = ZipList $ zipWith ($) gs xs
+
+instance Applicative' [] where
+    pure' x = [x]
+    gs <<*>> xs = [g x| g <- gs, x <- xs]
+
+sequenceAL :: Applicative' f => [f a] -> f [a]
+sequenceAL [] = pure' []
+sequenceAL (x:xs) = pure' (:) <<*>> x <<*>> sequenceAL  xs
