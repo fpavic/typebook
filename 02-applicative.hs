@@ -62,5 +62,30 @@ instance Applicative' [] where
     gs <<*>> xs = [g x| g <- gs, x <- xs]
 
 sequenceAL :: Applicative' f => [f a] -> f [a]
-sequenceAL [] = pure' []
-sequenceAL (x:xs) = pure' (:) <<*>> x <<*>> sequenceAL  xs
+sequenceAL = foldr (\ x -> (<<*>>) (pure' (:) <<*>> x)) (pure' [])
+
+-- sequenceAL [] = pure' []
+-- sequenceAL (x:xs) = pure' (:) <<*>> x <<*>> sequenceAL  xs
+
+class Functor f => Monoidal f where
+    unit' :: f a 
+    (**) :: f a -> f b -> f (a, b)
+
+{-
+Monoidal laws:
+
+left identity:
+unit ** v = v
+
+right identity
+u ** unit = u
+
+associativity
+u ** (v ** w) = (u ** v) ** w
+
+pure a = fmap (const a) unit
+gs <*> xs = fmap (uncurry $) (gs ** xs)
+
+unit = pure ()
+fx ** f y = pure (,) <*> fx <*> f y 
+-}
